@@ -1,4 +1,4 @@
-import { pageAttributes as page } from './page-attributes';
+import { pageAttributes as page } from "./page-attributes";
 import {
   Issue,
   setRepoContext,
@@ -9,17 +9,18 @@ import {
   postComment,
   createIssue,
   PAGE_SIZE,
-  IssueComment
-} from './github';
-import { TimelineComponent } from './timeline-component';
-import { NewCommentComponent } from './new-comment-component';
-import { startMeasuring, scheduleMeasure } from './measure';
-import { loadTheme } from './theme';
-import { getRepoConfig } from './repo-config';
-import { loadToken } from './oauth';
-import { enableReactions } from './reactions';
+  IssueComment,
+} from "./gitlab";
+import { TimelineComponent } from "./timeline-component";
+import { NewCommentComponent } from "./new-comment-component";
+import { startMeasuring, scheduleMeasure } from "./measure";
+import { loadTheme } from "./theme";
+import { getRepoConfig } from "./repo-config";
+import { loadToken } from "./oauth";
+import { enableReactions } from "./reactions";
+import { system_avatar_url, GITLAB_API } from "./config"
 
-setRepoContext(page);
+setRepoContext({ projectId: page.projectId });
 
 function loadIssue(): Promise<Issue | null> {
   if (page.issueNumber !== null) {
@@ -30,11 +31,10 @@ function loadIssue(): Promise<Issue | null> {
 
 async function bootstrap() {
   await loadToken();
-  // tslint:disable-next-line:prefer-const
   let [issue, user] = await Promise.all([
     loadIssue(),
     loadUser(),
-    loadTheme(page.theme, page.origin)
+    loadTheme(page.theme, page.origin),
   ]);
 
   startMeasuring(page.origin);
@@ -42,13 +42,13 @@ async function bootstrap() {
   const timeline = new TimelineComponent(user, issue);
   document.body.appendChild(timeline.element);
 
-  if (issue && issue.comments > 0) {
+  if (issue && issue.user_notes_count > 0) {
     renderComments(issue, timeline);
   }
 
   scheduleMeasure();
 
-  if (issue && issue.locked) {
+  if (issue && issue.confidential) {
     return;
   }
 
@@ -61,12 +61,12 @@ async function bootstrap() {
         page.issueTerm as string,
         page.url,
         page.title,
-        page.description || '',
+        page.description || "",
         page.label
       );
       timeline.setIssue(issue);
     }
-    const comment = await postComment(issue.number, markdown);
+    const comment = await postComment(issue.iid, markdown);
     timeline.insertComment(comment, true);
     newCommentComponent.clear();
   };
@@ -77,16 +77,19 @@ async function bootstrap() {
 
 bootstrap();
 
-addEventListener('not-installed', function handleNotInstalled() {
-  removeEventListener('not-installed', handleNotInstalled);
-  document.querySelector('.timeline')!.insertAdjacentHTML('afterbegin', `
+addEventListener("not-installed", function handleNotInstalled() {
+  removeEventListener("not-installed", handleNotInstalled);
+  document.querySelector(".timeline")!.insertAdjacentHTML(
+    "afterbegin",
+    `
   <div class="flash flash-error">
-    Error: utterances is not installed on <code>${page.owner}/${page.repo}</code>.
-    If you own this repo,
-    <a href="https://github.com/apps/utterances" target="_top"><strong>install the app</strong></a>.
+    Error: utterances is not installed on <code>${page.projectId}</code>.
+    If you own this project,
+    <a href="${GITLAB_API}"><strong>install the app</strong></a>.
     Read more about this change in
-    <a href="https://github.com/utterance/utterances/pull/25" target="_top">the PR</a>.
-  </div>`);
+    <a href="${GITLAB_API}"><target="_top">the PR</a>.
+  </div>`
+  );
   scheduleMeasure();
 });
 
@@ -97,63 +100,99 @@ async function renderComments(issue: Issue, timeline: TimelineComponent) {
     }
   };
 
-  const pageCount = Math.ceil(issue.comments / PAGE_SIZE);
-  // always load the first page.
-  const pageLoads = [loadCommentsPage(issue.number, 1)];
-  // if there are multiple pages, load the last page.
+  const pageCount = Math.ceil(issue.user_notes_count / PAGE_SIZE);
+  const pageLoads = [loadCommentsPage(issue.iid, 1)];
   if (pageCount > 1) {
-    pageLoads.push(loadCommentsPage(issue.number, pageCount));
+    pageLoads.push(loadCommentsPage(issue.iid, pageCount));
   }
-  // if the last page is small, load the penultimate page.
-  if (pageCount > 2 && issue.comments % PAGE_SIZE < 3 &&
-    issue.comments % PAGE_SIZE !== 0) {
-    pageLoads.push(loadCommentsPage(issue.number, pageCount - 1));
+  if (
+    pageCount > 2 &&
+    issue.user_notes_count % PAGE_SIZE < 3 &&
+    issue.user_notes_count % PAGE_SIZE !== 0
+  ) {
+    pageLoads.push(loadCommentsPage(issue.iid, pageCount - 1));
   }
-  // await all loads to reduce jank.
-  const pages = await Promise.all(pageLoads);
-  for (const page of pages) {
-    renderPage(page);
-  }
-  // enable loading hidden pages.
-  let hiddenPageCount = pageCount - pageLoads.length;
-  let nextHiddenPage = 2;
-  const renderLoader = (afterPage: IssueComment[]) => {
-    if (hiddenPageCount === 0) {
-      return;
-    }
-    const load = async () => {
-      loader.setBusy();
-      const page = await loadCommentsPage(issue.number, nextHiddenPage);
-      loader.remove();
+
+  try {
+    const pages = await Promise.all(pageLoads);
+    for (const page of pages) {
       renderPage(page);
-      hiddenPageCount--;
-      nextHiddenPage++;
-      renderLoader(page);
+    }
+    let hiddenPageCount = pageCount - pageLoads.length;
+    let nextHiddenPage = 2;
+    const renderLoader = (afterPage: IssueComment[]) => {
+      if (hiddenPageCount === 0) {
+        return;
+      }
+      const load = async () => {
+        loader.setBusy();
+        try {
+          const page = await loadCommentsPage(issue.iid, nextHiddenPage);
+          loader.remove();
+          renderPage(page);
+          hiddenPageCount--;
+          nextHiddenPage++;
+          renderLoader(page);
+        } catch (error) {
+          if (error.message === "401 Unauthorized") {
+            displayLoginPrompt(timeline);
+          }
+        }
+      };
+      const afterComment = afterPage.pop()!;
+      const loader = timeline.insertPageLoader(
+        afterComment,
+        hiddenPageCount * PAGE_SIZE,
+        load
+      );
     };
-    const afterComment = afterPage.pop()!;
-    const loader = timeline.insertPageLoader(afterComment, hiddenPageCount * PAGE_SIZE, load);
+    renderLoader(pages[0]);
+  } catch (error) {
+    if (error.message === "401 Unauthorized") {
+      displayLoginPrompt(timeline);
+    }
+  }
+}
+
+function displayLoginPrompt(timeline: TimelineComponent) {
+  const loginPrompt = {
+    id: Date.now(),
+    body: `You need to log in to view comments.`,
+    author: {
+      username: "system",
+      avatar_url: system_avatar_url,
+      web_url: "#",
+    },
+    created_at: new Date().toISOString(),
   };
-  renderLoader(pages[0]);
+  timeline.insertComment(loginPrompt as any, false);
 }
 
 export async function assertOrigin() {
   const { origins } = await getRepoConfig();
-  const { origin, owner, repo } = page;
+  const { origin } = page;
   if (origins.indexOf(origin) !== -1) {
     return;
   }
 
-  document.querySelector('.timeline')!.lastElementChild!.insertAdjacentHTML('beforebegin', `
+  document.querySelector(".timeline")!.lastElementChild!.insertAdjacentHTML(
+    "beforebegin",
+    `
   <div class="flash flash-error flash-not-installed">
-    Error: <code>${origin}</code> is not permitted to post to <code>${owner}/${repo}</code>.
-    Confirm this is the correct repo for this site's comments. If you own this repo,
-    <a href="https://github.com/${owner}/${repo}/edit/master/utterances.json" target="_top">
+    Error: <code>${origin}</code> is not permitted to post to <code>${
+      page.projectId
+    }</code>.
+    Confirm this is the correct project for this site's comments. If you own this project,
+    <a href="${GITLAB_API}/${
+      page.projectId
+    }/edit/master/utterances.json" target="_top">
       <strong>update the utterances.json</strong>
     </a>
     to include <code>${origin}</code> in the list of origins.<br/><br/>
     Suggested configuration:<br/>
     <pre><code>${JSON.stringify({ origins: [origin] }, null, 2)}</code></pre>
-  </div>`);
+  </div>`
+  );
   scheduleMeasure();
-  throw new Error('Origin not permitted.');
+  throw new Error("Origin not permitted.");
 }

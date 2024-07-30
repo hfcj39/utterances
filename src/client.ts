@@ -1,12 +1,14 @@
-import { ResizeMessage } from './measure';
-import { preferredThemeId, preferredTheme } from './preferred-theme';
+import { ResizeMessage } from "./measure";
+import { preferredThemeId, preferredTheme } from "./preferred-theme";
+import { utterancesOriginReg } from "./config";
 
 const url = new URL(location.href);
+
 // slice session from query string
-const session = url.searchParams.get('utterances')
+const session = url.searchParams.get("utterances");
 if (session) {
-  localStorage.setItem('utterances-session', session);
-  url.searchParams.delete('utterances');
+  localStorage.setItem("utterances-session", session);
+  url.searchParams.delete("utterances");
   history.replaceState(undefined, document.title, url.href);
 }
 
@@ -14,41 +16,55 @@ let script = document.currentScript as HTMLScriptElement;
 if (script === undefined) {
   // Internet Explorer :(
   // tslint:disable-next-line:max-line-length
-  script = document.querySelector('script[src^="https://utteranc.es/client.js"],script[src^="http://localhost:4000/client.js"]') as HTMLScriptElement;
+  script = document.querySelector(
+    'script[src^="https://utteranc.es/client.js"],script[src^="http://localhost:4000/client.js",,script[src^="http://192.168.83.26:4000/client.js"]'
+  ) as HTMLScriptElement;
 }
 
 // gather script element's attributes
 const attrs: Record<string, string> = {};
 for (let i = 0; i < script.attributes.length; i++) {
   const attribute = script.attributes.item(i)!;
-  attrs[attribute.name.replace(/^data-/, '')] = attribute.value; // permit using data-theme instead of theme.
+  attrs[attribute.name.replace(/^data-/, "")] = attribute.value; // permit using data-theme instead of theme.
 }
 if (attrs.theme === preferredThemeId) {
   attrs.theme = preferredTheme;
 }
 
 // gather page attributes
-const canonicalLink = document.querySelector(`link[rel='canonical']`) as HTMLLinkElement;
-attrs.url = canonicalLink ? canonicalLink.href : url.origin + url.pathname + url.search;
+const canonicalLink = document.querySelector(
+  `link[rel='canonical']`
+) as HTMLLinkElement;
+attrs.url = canonicalLink
+  ? canonicalLink.href
+  : url.origin + url.pathname + url.search;
 attrs.origin = url.origin;
-attrs.pathname = url.pathname.length < 2 ? 'index' : url.pathname.substr(1).replace(/\.\w+$/, '');
+attrs.pathname =
+  url.pathname.length < 2
+    ? "index"
+    : url.pathname.substr(1).replace(/\.\w+$/, "");
 attrs.title = document.title;
-const descriptionMeta = document.querySelector(`meta[name='description']`) as HTMLMetaElement;
-attrs.description = descriptionMeta ? descriptionMeta.content : '';
+const descriptionMeta = document.querySelector(
+  `meta[name='description']`
+) as HTMLMetaElement;
+attrs.description = descriptionMeta ? descriptionMeta.content : "";
 // truncate descriptions that would trigger 414 "URI Too Long"
 const len = encodeURIComponent(attrs.description).length;
 if (len > 1000) {
-  attrs.description = attrs.description.substr(0, Math.floor(attrs.description.length * 1000 / len));
+  attrs.description = attrs.description.substr(
+    0,
+    Math.floor((attrs.description.length * 1000) / len)
+  );
 }
-const ogtitleMeta = document.querySelector(`meta[property='og:title'],meta[name='og:title']`) as HTMLMetaElement;
-attrs['og:title'] = ogtitleMeta ? ogtitleMeta.content : '';
-attrs.session = session || localStorage.getItem('utterances-session') || '';
+const ogtitleMeta = document.querySelector(
+  `meta[property='og:title'],meta[name='og:title']`
+) as HTMLMetaElement;
+attrs["og:title"] = ogtitleMeta ? ogtitleMeta.content : "";
+attrs.session = session || localStorage.getItem("utterances-session") || "";
 
-// create the standard utterances styles and insert them at the beginning of the
-// <head> for easy overriding.
-// NOTE: the craziness with "width" is for mobile safari :(
+// create the standard styles and insert them at the beginning of the <head> for easy overriding.
 document.head.insertAdjacentHTML(
-  'afterbegin',
+  "afterbegin",
   `<style>
     .utterances {
       position: relative;
@@ -69,26 +85,30 @@ document.head.insertAdjacentHTML(
       height: 100%;
       border: 0;
     }
-  </style>`);
+  </style>`
+);
 
-// create the comments iframe and it's responsive container
-const utterancesOrigin = script.src.match(/^https:\/\/utteranc\.es|http:\/\/localhost:\d+/)![0];
+// create the comments iframe and its responsive container
+const utterancesOrigin = script.src.match(utterancesOriginReg)![0];
 const frameUrl = `${utterancesOrigin}/utterances.html`;
 script.insertAdjacentHTML(
-  'afterend',
+  "afterend",
   `<div class="utterances">
-    <iframe class="utterances-frame" title="Comments" scrolling="no" src="${frameUrl}?${new URLSearchParams(attrs)}" loading="lazy"></iframe>
-  </div>`);
+    <iframe class="utterances-frame" title="Comments" scrolling="no" src="${frameUrl}?${new URLSearchParams(
+    attrs
+  )}" loading="lazy"></iframe>
+  </div>`
+);
 const container = script.nextElementSibling as HTMLDivElement;
 script.parentElement!.removeChild(script);
 
-// adjust the iframe's height when the height of it's content changes
-addEventListener('message', event => {
+// adjust the iframe's height when the height of its content changes
+addEventListener("message", (event) => {
   if (event.origin !== utterancesOrigin) {
     return;
   }
   const data = event.data as ResizeMessage;
-  if (data && data.type === 'resize' && data.height) {
+  if (data && data.type === "resize" && data.height) {
     container.style.height = `${data.height}px`;
   }
 });

@@ -1,4 +1,4 @@
-import { loadJsonFile } from './github';
+import { loadJsonFile } from './gitlab';
 import { pageAttributes } from './page-attributes';
 
 export interface RepoConfig {

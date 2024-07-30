@@ -1,2 +1,1 @@
-// export const UTTERANCES_API = 'http://localhost:7000';
-export const UTTERANCES_API = 'https://api.utteranc.es';
+export const UTTERANCES_API = "http://192.168.83.26:7000";

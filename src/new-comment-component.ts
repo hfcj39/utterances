@@ -1,9 +1,10 @@
 import { pageAttributes as page } from './page-attributes';
-import { User, renderMarkdown } from './github';
+import { User, renderMarkdown } from './gitlab';
 import { scheduleMeasure } from './measure';
 import { processRenderedMarkdown } from './comment-component';
 import { getRepoConfig } from './repo-config';
 import { getLoginUrl } from './oauth';
+import { UTTERANCES_API } from './utterances-api';
 
 // tslint:disable-next-line:max-line-length
 const anonymousAvatar = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14 16" version="1.1"><path fill="rgb(179,179,179)" fill-rule="evenodd" d="M8 10.5L9 14H5l1-3.5L5.25 9h3.5L8 10.5zM10 6H4L2 7h10l-2-1zM9 2L7 3 5 2 4 5h6L9 2zm4.03 7.75L10 9l1 2-2 3h3.22c.45 0 .86-.31.97-.75l.56-2.28c.14-.53-.19-1.08-.72-1.22zM4 9l-3.03.75c-.53.14-.86.69-.72 1.22l.56 2.28c.11.44.52.75.97.75H5l-2-3 1-2z"></path></svg>`;
@@ -58,7 +59,7 @@ export class NewCommentComponent {
         </div>
         <footer class="new-comment-footer">
           <a class="text-link markdown-info" tabindex="-1" target="_blank"
-             href="https://guides.github.com/features/mastering-markdown/">
+             href="https://docs.gitlab.com/ee/user/markdown.html">
             <svg class="octicon v-align-bottom" viewBox="0 0 16 16" version="1.1"
               width="16" height="16" aria-hidden="true">
               <path fill-rule="evenodd" d="M14.85 3H1.15C.52 3 0 3.52 0 4.15v7.69C0 12.48.52 13 1.15
@@ -69,9 +70,10 @@ export class NewCommentComponent {
             Styling with Markdown is supported
           </a>
           <button class="btn btn-primary" type="submit">Comment</button>
-          <a class="btn btn-primary" href="${getLoginUrl(page.url)}" target="_top">
-            <svg class="octicon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
-            Sign in with GitHub
+          <a class="btn btn-primary" href="${getLoginUrl(
+            page.url
+          )}" target="_top">
+            Sign in with GitLab
           </a>
         </footer>
       </form>`;
@@ -99,9 +101,9 @@ export class NewCommentComponent {
     this.submitButton.hidden = !user;
     this.signInAnchor.hidden = !!user;
     if (user) {
-      this.avatarAnchor.href = user.html_url;
-      this.avatar.alt = '@' + user.login;
-      this.avatar.src = user.avatar_url + '?v=3&s=88';
+      this.avatarAnchor.href = user.avatar_url;
+      this.avatar.alt = '@' + user.username;
+      this.avatar.src = `${UTTERANCES_API}/avatar/${user.username}`;
       this.textarea.disabled = false;
       this.textarea.placeholder = 'Leave a comment';
     } else {
@@ -133,10 +135,18 @@ export class NewCommentComponent {
     } else {
       this.preview.textContent = 'Loading preview...';
       this.renderTimeout = setTimeout(
-        () => renderMarkdown(text).then(html => this.preview.innerHTML = html)
-          .then(() => processRenderedMarkdown(this.preview))
-          .then(scheduleMeasure),
-        500);
+        () =>
+          renderMarkdown(text)
+            .then((response) => {
+              // GitLab API 返回的 JSON 需要先解析
+              const jsonResponse = JSON.parse(response);
+              return jsonResponse.html;
+            })
+            .then((html) => (this.preview.innerHTML = html))
+            .then(() => processRenderedMarkdown(this.preview))
+            .then(scheduleMeasure),
+        500
+      );
     }
   }
 

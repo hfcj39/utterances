@@ -23,7 +23,7 @@ export async function loadToken(): Promise<string | null> {
     headers: {
       'content-type': 'application/json'
     },
-    body: JSON.stringify(pageAttributes.session)
+    body: JSON.stringify({ session: pageAttributes.session })
   });
   if (response.ok) {
     const t = await response.json();
