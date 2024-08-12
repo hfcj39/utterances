@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  cnops:
+    build:
+      context: . # 表示 Dockerfile 所在的上下文目录，即当前目录
+      dockerfile: Dockerfile # 可选项，如果 Dockerfile 名称不是默认的 Dockerfile，可以指定路径
+    container_name: cnops-utteraces
+    ports:
+      - "8080:80"      # 将Nginx服务的端口80暴露给主机
+      - "7000:7000"  # 将Node.js服务的端口3000暴露给主机
+    environment:
+      - NODE_ENV=production
+    restart: always

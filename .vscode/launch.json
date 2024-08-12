@@ -1,0 +1,22 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch with Node 14",
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": [
+        "-c",
+        "source $NVM_DIR/nvm.sh && nvm use 14 && node ${workspaceFolder}/node_modules/.bin/parcel serve src/*.html src/client.ts src/stylesheets/themes/*/{index,utterances}.scss --port 4000"
+      ],
+      "env": {
+        "NVM_DIR": "/home/cambricon/.nvm",
+        "RUN": "serve",
+        "PORT": "4000"
+      },
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ]
+}

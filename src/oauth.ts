@@ -1,4 +1,4 @@
-import { UTTERANCES_API } from './utterances-api';
+import { UTTERANCES_API } from './config';
 import { pageAttributes } from './page-attributes';
 
 export const token = { value: null as null | string };
@@ -23,7 +23,7 @@ export async function loadToken(): Promise<string | null> {
     headers: {
       'content-type': 'application/json'
     },
-    body: JSON.stringify(pageAttributes.session)
+    body: JSON.stringify({ session: pageAttributes.session })
   });
   if (response.ok) {
     const t = await response.json();

@@ -4,7 +4,7 @@
     <title>utterances</title>
     <meta
       name="description"
-      content="A lightweight commenting system using GitHub issues."
+      content="A lightweight commenting system using Gitlab issues."
     />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -14,7 +14,7 @@
       <link
         id="theme-stylesheet"
         rel="stylesheet"
-        href="https://utteranc.es/stylesheets/themes/github-light/index.css"
+        href="http://cnops.cambricon.com:32760/stylesheets/themes/github-light/index.css"
       />
     </if>
     <else>
@@ -49,7 +49,7 @@
     />
     <link rel="shortcut icon" href="./icons/favicon.ico" />
     <if condition="NODE_ENV === 'production'">
-      <link rel="canonical" href="https://utteranc.es" />
+      <link rel="canonical" href="http://cnops.cambricon.com:32760" />
     </if>
     <else>
       <link rel="canonical" href="http://localhost:4000/index.html" />
@@ -89,49 +89,27 @@
 
     <if condition="NODE_ENV === 'production'">
       <script
-        src="https://utteranc.es/client.js"
-        repo="utterance/utterances"
-        issue-term="homepage"
+        src="http://cnops.cambricon.com:32760/client.js"
+        repo="huangfuchenjie/demo"
+        issue-term="url"
+        label="💬 comment"
         crossorigin="anonymous"
         theme="github-light"
+        projectid="5738"
         async
       ></script>
     </if>
     <else>
       <script
         src="http://localhost:4000/client.js"
-        repo="jdanyow/utterances-demo"
-        issue-term="pathname"
+        repo="huangfuchenjie/demo"
+        issue-term="url"
         label="💬 comment"
         crossorigin="anonymous"
         theme="github-light"
+        projectid="5738"
         async
       ></script>
     </else>
-
-    <script>
-      (function (i, s, o, g, r, a, m) {
-        i["GoogleAnalyticsObject"] = r;
-        (i[r] =
-          i[r] ||
-          function () {
-            (i[r].q = i[r].q || []).push(arguments);
-          }),
-          (i[r].l = 1 * new Date());
-        (a = s.createElement(o)), (m = s.getElementsByTagName(o)[0]);
-        a.async = 1;
-        a.src = g;
-        m.parentNode.insertBefore(a, m);
-      })(
-        window,
-        document,
-        "script",
-        "https://www.google-analytics.com/analytics.js",
-        "ga"
-      );
-
-      ga("create", "UA-59973368-11", "auto");
-      ga("send", "pageview");
-    </script>
   </body>
 </html>
