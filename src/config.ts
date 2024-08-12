@@ -4,4 +4,5 @@ export const GITLAB_API = "http://gitlab.software.cambricon.com/api/v4/";
 export const powered_by = "cambricon_SEPP";
 export const powered_by_link = "http://cnops.cambricon.com";
 export const utterancesOriginReg =
-  /^https:\/\/your-gitlab-app-url|http:\/\/localhost:\d+|http:\/\/192\.168\.83\.26:\d+/;
+  /^http:\/\/gitlab.software.cambricon.com|http:\/\/localhost:\d+|http:\/\/192\.168\.83\.26:\d+|http:\/\/cnops.cambricon.com:\d+/;
+export const UTTERANCES_API = "http://cnops.cambricon.com:32761"; // backend url

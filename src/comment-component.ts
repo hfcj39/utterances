@@ -6,7 +6,7 @@ import {
   getReactionHtml,
   getSignInToReactMenuHtml,
 } from "./reactions";
-import { UTTERANCES_API } from "./utterances-api";
+import { UTTERANCES_API } from "./config";
 
 
 export class CommentComponent {

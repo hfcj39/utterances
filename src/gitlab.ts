@@ -1,7 +1,6 @@
 import { token } from "./oauth";
 import { decodeBase64UTF8 } from "./encoding";
-import { UTTERANCES_API } from "./utterances-api";
-import { GITLAB_API } from "./config";
+import { GITLAB_API, UTTERANCES_API } from "./config";
 
 export const PAGE_SIZE = 25;
 

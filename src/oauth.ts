@@ -1,4 +1,4 @@
-import { UTTERANCES_API } from './utterances-api';
+import { UTTERANCES_API } from './config';
 import { pageAttributes } from './page-attributes';
 
 export const token = { value: null as null | string };

@@ -17,7 +17,7 @@ if (script === undefined) {
   // Internet Explorer :(
   // tslint:disable-next-line:max-line-length
   script = document.querySelector(
-    'script[src^="https://utteranc.es/client.js"],script[src^="http://localhost:4000/client.js",,script[src^="http://192.168.83.26:4000/client.js"]'
+    'script[src^="http://cnops.cambricon.com:32760/client.js"],script[src^="http://localhost:4000/client.js",,script[src^="http://192.168.83.26:4000/client.js"]'
   ) as HTMLScriptElement;
 }
 
@@ -89,7 +89,8 @@ document.head.insertAdjacentHTML(
 );
 
 // create the comments iframe and its responsive container
-const utterancesOrigin = script.src.match(utterancesOriginReg)![0];
+const utterancesOrigin = script.src.match(utterancesOriginReg)![0] || "fuck";
+console.log("========", utterancesOrigin);
 const frameUrl = `${utterancesOrigin}/utterances.html`;
 script.insertAdjacentHTML(
   "afterend",
